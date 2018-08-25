@@ -1,6 +1,9 @@
 package com.example.demo.reporttest;
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -66,7 +69,7 @@ public class ReportTest {
 	
 	@SuppressWarnings("deprecation")
 	@Test
-	public void generateReport() throws ParseException
+	public void generateReport() throws ParseException, FileNotFoundException
 	{
 		ReportId id = new ReportId("Krishna_Mills", "TrendReport");
 		Optional<TrendReportConfiguration> configuration = this.reportConfig.findById(id);
@@ -189,13 +192,19 @@ public class ReportTest {
 					finalMapIndex++;
 				}
 
+				PrintWriter writer = new PrintWriter(new File("trendReport.csv"));
+				StringBuilder builder = new StringBuilder();
+				
 			for(int i=0; i< dbData.length; i++)
 			{
 				for(int j=0; j< dbData[i].length; j++)
 				{
-					System.out.println(dbData[i][j]);
+					builder.append(dbData[i][j]+",");
 				}
+				builder.append("\n");
 			}
+			writer.write(builder.toString());
+			writer.close();
 		}
 		
 	}
