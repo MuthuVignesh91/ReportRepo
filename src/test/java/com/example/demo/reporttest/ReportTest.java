@@ -25,6 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import com.example.demo.document.trend.Trend;
 import com.example.demo.document.trend.TrendId;
 import com.example.demo.document.trend.TrendValues;
+import com.example.demo.downloadformat.ReportDownloadFormat;
 import com.example.demo.reportconfig.trendreport.ParamArray;
 import com.example.demo.reportconfig.trendreport.ParameterColumns;
 import com.example.demo.reportconfig.trendreport.Parameters;
@@ -33,6 +34,7 @@ import com.example.demo.reportconfig.trendreport.TimeArray;
 import com.example.demo.reportconfig.trendreport.TrendReportConfiguration;
 import com.example.demo.repository.TrendReportConfigRepository;
 import com.example.demo.repository.TrendRepository;
+import com.example.demo.util.ReportUtil;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -46,7 +48,7 @@ public class ReportTest {
 //	@Test
 	public void addTrendReportConfig()
 	{
-		ReportId id = new ReportId("Krishna_Mills", "TrendReport");
+		ReportId id = new ReportId("Saravana_Solars", "Custome_Report_v001");
 		String localPath = "Some path";
 		String reportType = "History";
 		Date startDate = new Date();
@@ -67,11 +69,15 @@ public class ReportTest {
 		this.reportConfig.save(config);
 	}
 	
-	@SuppressWarnings("deprecation")
-	@Test
+	
+	/*
+	 * Keeping for internal reference only
+	 */
+//	@Test
+	@Deprecated
 	public void generateReport() throws ParseException, FileNotFoundException
 	{
-		ReportId id = new ReportId("Krishna_Mills", "TrendReport");
+		ReportId id = new ReportId("Saravana_Solars", "Custome_Report_v001");
 		Optional<TrendReportConfiguration> configuration = this.reportConfig.findById(id);
 		if(configuration.isPresent())
 		{
@@ -105,7 +111,7 @@ public class ReportTest {
 					if(trendResult.isPresent())
 					{
 						int tempSize = trendResult.get().getValues().size();
-						reportContent.put(pColumn.getLabel()+"*"+dbParams[2], trendResult.get().getValues());
+						reportContent.put(dbParams[0]+"."+pColumn.getLabel()+"*"+dbParams[2], trendResult.get().getValues());
 						if(maxParamLength < tempSize)
 						{
 							maxParamLength = tempSize+1;
@@ -116,7 +122,7 @@ public class ReportTest {
 			}
 			dbData = new String[maxParamLength][params.length];
 			System.out.println("Reprinting report content ============================================= "+ reportContent.toString());
-			Set<Date> dateIndex = new TreeSet<>();
+			/*Set<Date> dateIndex = new TreeSet<>();
 			for(Map.Entry<String, TrendValues> reportContentInstance : reportContent.entrySet())
 			{
 				for(Map.Entry<String, Object> maxParamDataInstance : reportContentInstance.getValue().entrySet())
@@ -158,10 +164,13 @@ public class ReportTest {
 						
 					}
 				}
-			}
+			}*/
+			ReportUtil util = new ReportUtil();
+				TreeMap<Date, HashMap<String, Object>> finalMap = util.getCustomReportContent(reportContent, trendStartDate, format);
 				System.out.println("===== Final Map ===== "+ finalMap);
+				dbData = util.convertMapToArray(finalMap, dbData);
 					dbData[0][0] = timeLabel;
-					int finalMapIndex =1;
+/*					int finalMapIndex =1;
 				for(Map.Entry<Date, HashMap<String, Object>> finalMapInstance: finalMap.entrySet())
 				{
 					dbData[finalMapIndex][0] = finalMapInstance.getKey().toGMTString();
@@ -190,9 +199,9 @@ public class ReportTest {
 						dbData[finalMapIndex][columnIndex] = paramIns.getValue().toString();
 					}
 					finalMapIndex++;
-				}
+				}*/
 
-				PrintWriter writer = new PrintWriter(new File("trendReport.csv"));
+		/*		PrintWriter writer = new PrintWriter(new File("trendReport.csv"));
 				StringBuilder builder = new StringBuilder();
 				
 			for(int i=0; i< dbData.length; i++)
@@ -204,9 +213,71 @@ public class ReportTest {
 				builder.append("\n");
 			}
 			writer.write(builder.toString());
-			writer.close();
+			writer.flush();
+			writer.close();*/
+		ReportDownloadFormat reportFormat = new ReportDownloadFormat(System.getProperty("user.dir"));
+		reportFormat.generateCSVFile(dbData);
+		
 		}
 		
 	}
-	
+
+	@Test
+	public void generateCSVReportTest() throws ParseException, FileNotFoundException
+	{
+		ReportId id = new ReportId("Saravana_Solars", "Custome_Report_v001");
+		Optional<TrendReportConfiguration> configuration = this.reportConfig.findById(id);
+		if(configuration.isPresent())
+		{
+			Date startDate = configuration.get().getStartDate();
+			Parameters[] params = configuration.get().getParams();
+			HashMap<String, TrendValues> reportContent = new HashMap<>();
+			String[][] dbData = null;
+			String timeLabel = null;
+			SimpleDateFormat format = null;
+			Date trendStartDate = null;
+			int maxParamLength = 0;
+			Calendar cal = Calendar.getInstance();
+			for(Parameters paramInstance : params)
+			{
+				if(paramInstance instanceof TimeArray)
+				{
+					TimeArray time = (TimeArray) paramInstance;
+					System.out.println("Format ======================================   "+time.getFormat());
+					timeLabel = time.getLabel();
+					format = new SimpleDateFormat(time.getFormat());
+				}
+				else if(paramInstance instanceof ParameterColumns)
+				{
+					ParameterColumns pColumn = (ParameterColumns) paramInstance;
+					String[] dbParams = pColumn.getDbParam().split("\\.");
+					TrendId id1 = new TrendId(startDate, dbParams[0], dbParams[1]);
+					
+					Optional<Trend> trendResult = this.trendRepo.findById(id1);
+					trendStartDate = trendResult.get().getId().getTimestamp();
+						
+					if(trendResult.isPresent())
+					{
+						int tempSize = trendResult.get().getValues().size();
+						reportContent.put(dbParams[0]+"."+pColumn.getLabel()+"*"+dbParams[2], trendResult.get().getValues());
+						if(maxParamLength < tempSize)
+						{
+							maxParamLength = tempSize+1;
+						}
+					}
+					
+				}
+			}
+			dbData = new String[maxParamLength][params.length];
+			System.out.println("Reprinting report content ============================================= "+ reportContent.toString());
+			
+			ReportUtil util = new ReportUtil();
+			TreeMap<Date, HashMap<String, Object>> finalMap = util.getCustomReportContent(reportContent, trendStartDate, format);
+			dbData = util.convertMapToArray(finalMap, dbData);
+			dbData[0][0] = timeLabel;
+			
+			ReportDownloadFormat reportFormat = new ReportDownloadFormat(System.getProperty("user.dir"));
+			reportFormat.generateCSVFile(dbData);
+	}
+}
 }
