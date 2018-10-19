@@ -30,6 +30,7 @@ public class TrendConfigurationTest {
 	@Test
 	public void createConfig()
 	{
+
 		ReportId id = new ReportId("Saravana_Solars", "Custome_Report_v001");
 		String localPath = System.getProperty("user.dir");
 		TimeArray timeArr = new TimeArray("TIME", "dd-MM-yyyy HH:mm:ss", "TIME");
@@ -41,9 +42,11 @@ public class TrendConfigurationTest {
 		arr.addToList(column1);
 		arr.addToList(column2);
 		
-		
+		ReportUtil util = new ReportUtil();
+		Date startDate = util.getStartOfDay();
+		Date endDate = util.getEndOfDay();
 		TrendReportConfiguration config = new TrendReportConfiguration(id, localPath, "custom", 
-				new Date(), new Date(), true, arr.getParamArray());
+				startDate, endDate, true, arr.getParamArray());
 		configRepo.save(config);
 				
 	}
