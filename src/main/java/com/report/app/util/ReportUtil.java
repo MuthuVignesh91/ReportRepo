@@ -2,14 +2,7 @@ package com.report.app.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 import com.report.app.document.trend.TrendValues;
 
@@ -30,6 +23,27 @@ public class ReportUtil {
 		}
 		return dateIndex;
 	}
+
+	public Date getStartOfDay() {
+		Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		int year = calendar.get(Calendar.YEAR);
+		int month = calendar.get(Calendar.MONTH);
+		int day = calendar.get(Calendar.DATE);
+		calendar.set(year, month, day, 0, 0, 0);
+		calendar.set(Calendar.MILLISECOND, 0);
+		return calendar.getTime();
+	}
+
+	public Date getEndOfDay() {
+		Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		int year = calendar.get(Calendar.YEAR);
+		int month = calendar.get(Calendar.MONTH);
+		int day = calendar.get(Calendar.DATE);
+		calendar.set(year, month, day, 23, 59, 59);
+		calendar.set(Calendar.MILLISECOND, 999);
+		return calendar.getTime();
+	}
+
 	
 	public TreeMap<Date, HashMap<String, Object>> getCustomReportContent(HashMap<String, TrendValues> reportContent, Date trendStartDate, SimpleDateFormat format) throws ParseException
 	{
